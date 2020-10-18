@@ -32,16 +32,16 @@ func (w gzipResponseWriter) Write(b []byte) (int, error) {
 }
 
 // Gzipler is the middleware
-func Gzipler(h http.HandlerFunc, level int) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+func Gzipler(h http.Handler, level int) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if !strings.Contains(r.Header.Get("Accept-Encoding"), "gzip") {
-			h(w, r)
+			h.ServeHTTP(w, r)
 			return
 		}
 		w.Header().Set("Content-Encoding", "gzip")
 		gz, _ := gzip.NewWriterLevel(w, level)
 		defer gz.Close()
 		gw := gzipResponseWriter{Writer: gz, ResponseWriter: w}
-		h(gw, r)
-	}
+		h.ServeHTTP(gw, r)
+	})
 }
